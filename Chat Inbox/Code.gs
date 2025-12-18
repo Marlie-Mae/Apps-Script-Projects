@@ -2,7 +2,7 @@ const SHEET_ID = "1caCoTBN6tA4vG-MzQcbssZ7YCgSJ4JhcLUa6b7pIiV8";
 const CHAT_SHEET = "Chat";
 
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile("Chat")
+  return HtmlService.createHtmlOutputFromFile("chat")
     .setTitle("Sheet Chat");
 }
 
