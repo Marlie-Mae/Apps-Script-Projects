@@ -1,75 +1,129 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
+      background: #ece5dd;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
-    #chat {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
+
+    /* HEADER */
+    #header {
+      background: #075e54;
+      color: white;
       padding: 10px;
-      margin-bottom: 10px;
+      font-weight: bold;
     }
+
+    /* CHAT AREA */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
     .bubble {
+      max-width: 70%;
       padding: 8px 12px;
-      border-radius: 12px;
-      margin: 5px 0;
-      max-width: 80%;
+      margin: 6px 0;
+      border-radius: 8px;
+      position: relative;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
     }
+
+    /* USER 1 (RIGHT / GREEN) */
     .user1 {
       background: #dcf8c6;
       margin-left: auto;
-      text-align: right;
+      border-bottom-right-radius: 0;
     }
+
+    /* USER 2 (LEFT / WHITE) */
     .user2 {
-      background: #f1f0f0;
+      background: white;
       margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+
+    /* FOOTER */
+    #footer {
+      display: flex;
+      padding: 8px;
+      background: #f0f0f0;
+      gap: 6px;
+    }
+
+    #message {
+      flex: 1;
+      padding: 8px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    button {
+      background: #075e54;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    select {
+      margin-left: 8px;
     }
   </style>
 </head>
+
 <body>
 
-<select id="user">
-  <option value="User1">User 1</option>
-  <option value="User2">User 2</option>
-</select>
+  <div id="header">
+    Sheet Chat
+    <select id="user">
+      <option value="User1">User 1</option>
+      <option value="User2">User 2</option>
+    </select>
+  </div>
 
-<div id="chat"></div>
+  <div id="chat"></div>
 
-<input type="text" id="message" placeholder="Type message…" style="width:80%">
-<button onclick="send()">Send</button>
+  <div id="footer">
+    <input type="text" id="message" placeholder="Type a message…" />
+    <button onclick="send()">➤</button>
+  </div>
 
 <script>
   function loadChat() {
-    google.script.run
-      .withSuccessHandler(function(data) {
+    google.script.run.withSuccessHandler(function(data) {
+      const chat = document.getElementById("chat");
+      chat.innerHTML = "";
 
-        const chat = document.getElementById("chat");
-        chat.innerHTML = "";
+      if (!data || data.length === 0) {
+        chat.innerHTML = "<em>No messages yet</em>";
+        return;
+      }
 
-        if (!data || data.length === 0) {
-          chat.innerHTML = "<em>No messages yet</em>";
-          return;
-        }
+      data.forEach(msg => {
+        const bubble = document.createElement("div");
+        bubble.className =
+          "bubble " + (msg.user === "User1" ? "user1" : "user2");
+        bubble.textContent = msg.message;
+        chat.appendChild(bubble);
+      });
 
-        data.forEach(msg => {
-          const bubble = document.createElement("div");
-
-          bubble.className =
-            "bubble " + (msg.user === "User1" ? "user1" : "user2");
-
-          bubble.innerHTML =
-            "<strong>" + msg.user + "</strong><br>" +
-            msg.message;
-
-          chat.appendChild(bubble);
-        });
-
-        chat.scrollTop = chat.scrollHeight;
-      })
-      .getMessages();
+      chat.scrollTop = chat.scrollHeight;
+    }).getMessages();
   }
 
   function send() {
