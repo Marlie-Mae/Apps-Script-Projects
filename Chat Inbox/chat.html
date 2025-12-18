@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #chat {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .bubble {
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin: 5px 0;
+      max-width: 80%;
+    }
+    .user1 {
+      background: #dcf8c6;
+      margin-left: auto;
+      text-align: right;
+    }
+    .user2 {
+      background: #f1f0f0;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+
+<select id="user">
+  <option value="User1">User 1</option>
+  <option value="User2">User 2</option>
+</select>
+
+<div id="chat"></div>
+
+<input type="text" id="message" placeholder="Type message…" style="width:80%">
+<button onclick="send()">Send</button>
+
+<script>
+  function loadChat() {
+    google.script.run
+      .withSuccessHandler(function(data) {
+
+        const chat = document.getElementById("chat");
+        chat.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          chat.innerHTML = "<em>No messages yet</em>";
+          return;
+        }
+
+        data.forEach(msg => {
+          const bubble = document.createElement("div");
+
+          bubble.className =
+            "bubble " + (msg.user === "User1" ? "user1" : "user2");
+
+          bubble.innerHTML =
+            "<strong>" + msg.user + "</strong><br>" +
+            msg.message;
+
+          chat.appendChild(bubble);
+        });
+
+        chat.scrollTop = chat.scrollHeight;
+      })
+      .getMessages();
+  }
+
+  function send() {
+    const user = document.getElementById("user").value;
+    const message = document.getElementById("message").value.trim();
+
+    if (!message) return;
+
+    google.script.run
+      .withSuccessHandler(loadChat)
+      .sendMessage(user, message);
+
+    document.getElementById("message").value = "";
+  }
+
+  setInterval(loadChat, 2000);
+  loadChat();
+</script>
+
+</body>
+</html>
