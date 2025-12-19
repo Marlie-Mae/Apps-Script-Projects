@@ -4,3 +4,13 @@ TO DO's
 - delivered and seen
 - login
 - based on gmail
+
+SYSTEM FLOWS
+LOGIN PAGE
+   ↓ (successful login)
+DASHBOARD
+   ├── shows current user info
+   ├── shows list of OTHER USERS
+   └── click user → open CHAT PAGE
+           ├── send message
+           └── messages saved to GOOGLE SHEET
