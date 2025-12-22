@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ece5dd;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .header {
+      background: #075e54;
+      color: white;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    .header .title {
+      font-size: 18px;
+    }
+
+    .header .user-avatar {
+      background: #25d366;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* SEARCH */
+    .search {
+      background: #f0f0f0;
+      padding: 8px;
+    }
+
+    .search input {
+      width: 98%;
+      padding: 8px 12px;
+      border-radius: 20px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    /* CHAT LIST */
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .chat-item:hover {
+      background: #f5f5f5;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #dcf8c6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 12px;
+      color: #075e54;
+    }
+
+    .chat-info {
+      flex: 1;
+    }
+
+    .chat-name {
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .chat-preview {
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="title">SheetChat</div>
+    <div class="user-avatar" id="userAvatar">?</div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search">
+    <input type="text" id="search" placeholder="Search or start new chat">
+  </div>
+
+  <!-- CHAT LIST -->
+  <div class="chat-list" id="chatList">
+    Loading chats...
+  </div>
+
+<script>
+  let loggedInUser = null;
+  let allUsers = [];
+
+  window.addEventListener("userLoggedIn", () => {
+    loggedInUser = window.currentUser;
+    document.getElementById("userAvatar").textContent =
+      loggedInUser.username.charAt(0).toUpperCase();
+    loadUsers();
+  });
+
+  function loadUsers() {
+    google.script.run.withSuccessHandler(function(users) {
+      allUsers = users;
+      renderUsers(users);
+    }).getOtherUsers(loggedInUser.userId);
+  }
+
+  function renderUsers(users) {
+    const list = document.getElementById("chatList");
+    list.innerHTML = "";
+
+    if (users.length === 0) {
+      list.innerHTML = "<em style='padding:12px'>No chats yet</em>";
+      return;
+    }
+
+    users.forEach(u => {
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.onclick = () => openChat(u);
+
+      div.innerHTML = `
+        <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
+        <div class="chat-info">
+          <div class="chat-name">${u.username}</div>
+          <div class="chat-preview">Tap to chat</div>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+  }
+
+  function openChat(user) {
+  // store selected user
+  window.selectedChatUser = user;
+
+  // hide dashboard, show chat
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("chat").style.display = "block";
+
+  // tell chat who is talking to whom
+  if (window.openChatRoom) {
+    window.openChatRoom(
+      window.currentUser.username,
+      user.username
+    );
+  }
+
+}
+
+  document.getElementById("search").addEventListener("input", function () {
+    const q = this.value.toLowerCase();
+    const filtered = allUsers.filter(u =>
+      u.username.toLowerCase().includes(q)
+    );
+    renderUsers(filtered);
+  });
+</script>
+
+</body>
+</html>
