@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ece5dd;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .chat-header {
+      background: #075e54;
+      color: white;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back {
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .chat-name {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    /* MESSAGES */
+      .messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #ece5dd;
+    }
+
+    .bubble {
+      max-width: 70%;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      clear: both;
+    }
+
+    .sent {
+      background: #dcf8c6;
+      float: right;
+      border-bottom-right-radius: 4px;
+    }
+
+    .received {
+      background: white;
+      float: left;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* INPUT */
+    .input-box {
+      display: flex;
+      padding: 8px;
+      background: #f0f0f0;
+    }
+
+    .input-box input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: none;
+      outline: none;
+    }
+
+    .input-box button {
+      margin-left: 8px;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      background: #075e54;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="back" onclick="goBack()">←</div>
+    <div class="chat-name" id="chatWith">Chat</div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages" id="messages"></div>
+
+  <!-- INPUT -->
+  <div class="input-box">
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <button onclick="send()">➤</button>
+  </div>
+
+<script>
+  let me = null;
+  let other = null;
+  let refreshTimer = null;
+
+
+  window.openChatRoom = function(myName, otherName) {
+  me = myName;
+  other = otherName;
+
+  document.getElementById("chatWith").textContent = other;
+
+  loadMessages();
+
+  if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(loadMessages, 3000);
+  };
+
+    function loadMessages() {
+    if (!me || !other) return;
+
+    google.script.run
+      .withSuccessHandler(renderMessages)
+      .getMessages(me, other);
+  }
+
+
+  function send() {
+    const input = document.getElementById("messageInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    google.script.run.withSuccessHandler(() => {
+      input.value = "";
+      loadMessages();
+    }).sendMessage(me, other, text);
+  }
+
+  function goBack() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+  }
+</script>
+
+<script>
+function renderMessages(messages) {
+  console.log("MESSAGES:", messages);
+
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  messages.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "bubble " + (m.from === me ? "sent" : "received");
+    div.textContent = m.message;
+    box.appendChild(div);
+  });
+
+  box.scrollTop = box.scrollHeight;
+}
+</script>
+
+
+</body>
+</html>
