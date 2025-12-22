@@ -97,10 +97,16 @@ function getMessages(userA, userB) {
       (r[1] === userB && r[2] === userA)
     )
     .map(r => ({
-      from: r[1],     
-      to: r[2],
-      message: r[3]      
+      from: r[1],        
+      to: r[2],          
+      message: r[3],     
+      time: Utilities.formatDate(
+        new Date(r[0]),
+        Session.getScriptTimeZone(),
+        "HH:mm"
+      )
     }));
+
 
   return messages;
 }
