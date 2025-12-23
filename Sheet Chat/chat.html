@@ -130,7 +130,6 @@
   let other = null;
   let refreshTimer = null;
 
-
   window.openChatRoom = function(myName, otherName) {
   me = myName;
   other = otherName;
@@ -141,6 +140,22 @@
 
   if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(loadMessages, 3000);
+
+    google.script.run.withSuccessHandler(isTyping => {
+      document.getElementById("chatWith").textContent =
+        isTyping ? other + " is typing…" : other;
+    }).isTyping(other, me);
+
+
+    google.script.run.updateLastSeen(me);
+
+  google.script.run.withSuccessHandler(time => {
+    if (time) {
+      document.getElementById("chatWith").textContent =
+        other + " • last seen " + time;
+    }
+  }).getLastSeen(other);
+
   };
 
     function loadMessages() {
@@ -202,6 +217,18 @@ function renderMessages(messages) {
 
   box.scrollTop = box.scrollHeight;
 }
+
+let typingTimer;
+
+document.getElementById("messageInput").addEventListener("input", () => {
+  google.script.run.setTyping(me, other);
+
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    google.script.run.clearTyping(me);
+  }, 3000);
+});
+
 </script>
 
 
