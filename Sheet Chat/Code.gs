@@ -110,3 +110,112 @@ function getMessages(userA, userB) {
 
   return messages;
 }
+
+const PRESENCE_SHEET = "Presence";
+
+function updateLastSeen(username) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(PRESENCE_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(PRESENCE_SHEET);
+    sheet.appendRow(["Username", "LastSeen"]);
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username) {
+      sheet.getRange(i + 1, 2).setValue(now);
+      return;
+    }
+  }
+
+  sheet.appendRow([username, now]);
+}
+
+function getLastSeen(username) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(PRESENCE_SHEET);
+  if (!sheet) return null;
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username) {
+      return Utilities.formatDate(
+        new Date(data[i][1]),
+        Session.getScriptTimeZone(),
+        "HH:mm"
+      );
+    }
+  }
+  return null;
+}
+
+function setTyping(fromUser, toUser) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(PRESENCE_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === fromUser) {
+      sheet.getRange(i + 1, 3).setValue(toUser);
+      return;
+    }
+  }
+}
+
+function clearTyping(fromUser) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(PRESENCE_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === fromUser) {
+      sheet.getRange(i + 1, 3).setValue("");
+      return;
+    }
+  }
+}
+
+function isTyping(otherUser, me) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(PRESENCE_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === otherUser && data[i][2] === me) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getUnreadCount(me) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(CHAT_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  const counts = {};
+
+  for (let i = 1; i < data.length; i++) {
+    const [ , from, to, , read ] = data[i];
+    if (to === me && read !== true) {
+      counts[from] = (counts[from] || 0) + 1;
+    }
+  }
+
+  return counts;
+}
+
+
+function markMessagesAsRead(me, other) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(CHAT_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    const from = data[i][1];
+    const to = data[i][2];
+    const read = data[i][4];
+
+    if (from === other && to === me && read !== true) {
+      sheet.getRange(i + 1, 5).setValue(true);
+    }
+  }
+}
+
