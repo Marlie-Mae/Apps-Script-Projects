@@ -124,24 +124,37 @@
 <script>
   let loggedInUser = null;
   let allUsers = [];
+  let unreadCounts = {};
+  let unreadTimer = null;
 
   window.addEventListener("userLoggedIn", () => {
     loggedInUser = window.currentUser;
     document.getElementById("userAvatar").textContent =
       loggedInUser.username.charAt(0).toUpperCase();
     loadUsers();
+
+    // auto-refresh unread badges
+    if (unreadTimer) clearInterval(unreadTimer);
+    unreadTimer = setInterval(refreshUnreadCounts, 3000);
   });
 
   function loadUsers() {
     google.script.run.withSuccessHandler(function(users) {
-      allUsers = users;
-      renderUsers(users);
+
+      google.script.run.withSuccessHandler(function(counts) {
+        unreadCounts = counts || {};
+        allUsers = users;
+        renderUsers(users);
+      }).getUnreadCount(loggedInUser.username);
+
     }).getOtherUsers(loggedInUser.userId);
   }
+
 
   function renderUsers(users) {
     const list = document.getElementById("chatList");
     list.innerHTML = "";
+    
 
     if (users.length === 0) {
       list.innerHTML = "<em style='padding:12px'>No chats yet</em>";
@@ -156,18 +169,39 @@
       div.innerHTML = `
         <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
         <div class="chat-info">
-          <div class="chat-name">${u.username}</div>
+
+        <div class="chat-name">
+        ${u.username}
+        ${unreadCounts[u.username]
+          ? `<span style="
+              background:#25d366;
+              color:white;
+              padding:2px 6px;
+              border-radius:12px;
+              font-size:12px;
+              margin-left:6px;">
+              ${unreadCounts[u.username]}
+            </span>`
+          : ""
+        }
+      </div>
+
           <div class="chat-preview">Tap to chat</div>
         </div>
       `;
 
       list.appendChild(div);
+      
     });
   }
 
-  function openChat(user) {
-  // store selected user
+function openChat(user) {
   window.selectedChatUser = user;
+
+  google.script.run.markMessagesAsRead(
+    window.currentUser.username,
+    user.username
+  );
 
   // hide dashboard, show chat
   document.getElementById("dashboard").style.display = "none";
@@ -181,7 +215,11 @@
     );
   }
 
-}
+  // clear badge visually
+    unreadCounts[user.username] = 0;
+    renderUsers(allUsers);
+  }
+
 
   document.getElementById("search").addEventListener("input", function () {
     const q = this.value.toLowerCase();
@@ -190,6 +228,16 @@
     );
     renderUsers(filtered);
   });
+
+  function refreshUnreadCounts() {
+    if (!loggedInUser) return;
+
+    google.script.run.withSuccessHandler(function(counts) {
+      unreadCounts = counts || {};
+      renderUsers(allUsers);
+    }).getUnreadCount(loggedInUser.username);
+  }
+
 </script>
 
 </body>
