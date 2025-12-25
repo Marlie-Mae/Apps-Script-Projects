@@ -219,3 +219,37 @@ function markMessagesAsRead(me, other) {
   }
 }
 
+// logout
+function logoutUser() {
+  const props = PropertiesService.getUserProperties();
+  props.deleteAllProperties();
+}
+
+// for online status
+function getOnlineStatus() {
+  const sheet = SpreadsheetApp
+    .openById(SHEET_ID)
+    .getSheetByName(PRESENCE_SHEET);
+
+  if (!sheet) return {};
+
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+  const status = {};
+
+  for (let i = 1; i < data.length; i++) {
+    const username = data[i][0];
+    const lastSeen = data[i][1];
+
+    if (!lastSeen) {
+      status[username] = false;
+      continue;
+    }
+
+    const diff = (now - new Date(lastSeen)) / 1000;
+    status[username] = diff <= 10; // online if active in last 10s
+  }
+
+  return status;
+}
+
