@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
+   body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #ece5dd;
@@ -13,11 +13,11 @@
       flex-direction: column;
     }
 
-    /* HEADER */
+    /* HEADER - Made taller and fonts larger */
     .header {
       background: #075e54;
       color: white;
-      padding: 12px;
+      padding: 18px 25px; /* Increased padding */
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -25,34 +25,35 @@
     }
 
     .header .title {
-      font-size: 18px;
+      font-size: 24px; /* Increased from 18px */
     }
 
     .header .user-avatar {
       background: #25d366;
-      width: 36px;
-      height: 36px;
+      width: 48px;  /* Increased from 36px */
+      height: 48px; /* Increased from 36px */
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 20px; /* Larger letter */
       font-weight: bold;
       cursor: pointer;
     }
 
-    /* SEARCH */
+    /* SEARCH - Larger input */
     .search {
       background: #f0f0f0;
-      padding: 8px;
+      padding: 15px; /* Increased padding */
     }
 
     .search input {
-      width: 98%;
-      padding: 8px 12px;
-      border-radius: 20px;
+      width: 97%;
+      padding: 12px 20px; /* Larger touch area */
+      border-radius: 25px;
       border: none;
       outline: none;
-      font-size: 14px;
+      font-size: 16px; /* Increased from 14px */
     }
 
     /* CHAT LIST */
@@ -65,7 +66,7 @@
     .chat-item {
       display: flex;
       align-items: center;
-      padding: 12px;
+      padding: 18px 25px; /* Larger items */
       cursor: pointer;
       border-bottom: 1px solid #eee;
     }
@@ -75,15 +76,16 @@
     }
 
     .avatar {
-      width: 42px;
-      height: 42px;
+      width: 56px;  
+      height: 56px; 
       border-radius: 50%;
       background: #dcf8c6;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      margin-right: 12px;
+      font-size: 20px;
+      margin-right: 18px; 
       color: #075e54;
     }
 
@@ -93,12 +95,51 @@
 
     .chat-name {
       font-weight: bold;
-      font-size: 15px;
+      font-size: 18px;
+      margin-bottom: 4px;
     }
 
     .chat-preview {
-      font-size: 13px;
+      font-size: 15px; 
       color: #666;
+    }
+
+    .user-menu {
+      position: relative;
+    }
+
+    .dropdown {
+      position: absolute;
+      right: 0;
+      top: 52px; /* Adjusted for larger header */
+      background: white;
+      color: black;
+      min-width: 200px; /* Wider dropdown */
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown.show {
+      display: block;
+    }
+
+    .dropdown-username {
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      border-bottom: 1px solid #eee;
+    }
+
+    .dropdown-item {
+      padding: 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+      background: #f5f5f5;
     }
   </style>
 </head>
@@ -108,7 +149,16 @@
   <!-- HEADER -->
   <div class="header">
     <div class="title">SheetChat</div>
-    <div class="user-avatar" id="userAvatar">?</div>
+
+    <div class="user-menu" id="userMenu">
+      <div class="user-avatar" id="userAvatar">?</div>
+
+      <div class="dropdown" id="userDropdown">
+        <div class="dropdown-username" id="dropdownUsername">Username</div>
+        <div class="dropdown-item" id="logoutBtn">Logout</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- SEARCH -->
@@ -126,6 +176,8 @@
   let allUsers = [];
   let unreadCounts = {};
   let unreadTimer = null;
+  let onlineStatus = {};
+  let presenceTimer = null;
 
   window.addEventListener("userLoggedIn", () => {
     loggedInUser = window.currentUser;
@@ -133,9 +185,23 @@
       loggedInUser.username.charAt(0).toUpperCase();
     loadUsers();
 
+      document.getElementById("dropdownUsername").textContent =
+    loggedInUser.username;
+
     // auto-refresh unread badges
     if (unreadTimer) clearInterval(unreadTimer);
     unreadTimer = setInterval(refreshUnreadCounts, 3000);
+
+   if (presenceTimer) clearInterval(presenceTimer);
+
+    presenceTimer = setInterval(() => {
+      if (window.currentUser) {
+        google.script.run.updateLastSeen(
+          window.currentUser.username
+        );
+      }
+    }, 5000);
+    
   });
 
   function loadUsers() {
@@ -167,7 +233,23 @@
       div.onclick = () => openChat(u);
 
       div.innerHTML = `
-        <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
+        <div style="position:relative">
+          <div class="avatar">
+            ${u.username.charAt(0).toUpperCase()}
+          </div>
+
+          <span style="
+            position:absolute;
+            bottom:2px;
+            right:10px;
+            width:12px;
+            height:12px;
+            border-radius:50%;
+            background:${onlineStatus[u.username] ? '#25d366' : '#ccc'};
+            border:2px solid white;
+          "></span>
+        </div>
+
         <div class="chat-info">
 
         <div class="chat-name">
@@ -176,10 +258,10 @@
           ? `<span style="
               background:#25d366;
               color:white;
-              padding:2px 6px;
-              border-radius:12px;
-              font-size:12px;
-              margin-left:6px;">
+              padding:3px 8px;
+              border-radius:14px;
+              font-size:13px;
+              margin-left:8px;">
               ${unreadCounts[u.username]}
             </span>`
           : ""
@@ -236,7 +318,51 @@ function openChat(user) {
       unreadCounts = counts || {};
       renderUsers(allUsers);
     }).getUnreadCount(loggedInUser.username);
+
+    google.script.run.withSuccessHandler(function(status) {
+      onlineStatus = status || {};
+      renderUsers(allUsers);
+    }).getOnlineStatus();
+
   }
+
+  document.getElementById("userAvatar").addEventListener("click", function (e) {
+  e.stopPropagation();
+  document.getElementById("userDropdown").classList.toggle("show");
+});
+
+document.addEventListener("click", function () {
+  document.getElementById("userDropdown").classList.remove("show");
+});
+
+document.getElementById("logoutBtn").addEventListener("click", logout);
+
+function logout() {
+  if (presenceTimer) clearInterval(presenceTimer);
+
+  google.script.run.updateLastSeen(
+  window.currentUser.username
+);
+
+  if (unreadTimer) clearInterval(unreadTimer);
+
+  window.currentUser = null;
+  window.selectedChatUser = null;
+  unreadCounts = {};
+  allUsers = [];
+
+  google.script.run.logoutUser();
+
+  document.getElementById("userMenu").style.display = "none";
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("chat").style.display = "none";
+
+  document.getElementById("username").value = "";
+  document.getElementById("password").value = "";
+
+  // show login
+  document.getElementById("login").style.display = "flex";
+}
 
 </script>
 
